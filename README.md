@@ -73,10 +73,8 @@ The configuration includes support for:
   - RX: GPIO13
 
 - **Buttons**:
-  - Power Button: GPIO39 (also switches pages)
-  - Button 1: GPIO38 (previous page)
-  - Button 2: GPIO37
-  - Button 3: GPIO1 (next page)
+  - Power Button: GPIO39 (physical button - cycles pages)
+  - Bottom Touch Zones: Handled by FT6336U touchscreen (not GPIO)
 
 - **LED**: GPIO19
 - **Speaker**: GPIO25
@@ -117,10 +115,13 @@ The M5Stack Tough display cycles through three pages:
 3. **System Info** - Network and device status
 
 **Navigation:**
-- Touch the screen anywhere to advance to the next page
-- Press Button 1 (bottom left) to go to the previous page
-- Press Button 3 (bottom right) to go to the next page
-- Press the Power Button to cycle pages
+- **Touch bottom-left zone** (x < 107, y > 200): Previous page
+- **Touch bottom-center zone** (x 107-213, y > 200): Reserved for future use
+- **Touch bottom-right zone** (x > 213, y > 200): Next page
+- **Touch main display area** (y < 200): Next page
+- **Press physical Power Button** (side of device): Next page
+
+Note: The M5Stack Tough's bottom "buttons" are capacitive touch zones on the screen, not physical buttons.
 
 ### Monitored Sensors
 

@@ -93,9 +93,9 @@ modbus_controller:
     command_throttle: 200ms
     update_interval: 30s
 
-# Power Management & Buttons
+# Binary Sensors
 binary_sensor:
-  # Power Button
+  # Power Button (physical button on the side)
   - platform: gpio
     pin:
       number: GPIO39
@@ -104,33 +104,6 @@ binary_sensor:
     on_press:
       then:
         - logger.log: "Power button pressed"
-        - display.page.show_next: m5_display
-
-  # Touch Button 1 (Bottom Left) - Previous Page
-  - platform: gpio
-    pin:
-      number: GPIO38
-      inverted: true
-    name: "${friendly_name} Button 1"
-    on_press:
-      then:
-        - display.page.show_previous: m5_display
-
-  # Touch Button 2 (Bottom Center) - Toggle backlight
-  - platform: gpio
-    pin:
-      number: GPIO37
-      inverted: true
-    name: "${friendly_name} Button 2"
-
-  # Touch Button 3 (Bottom Right) - Next Page
-  - platform: gpio
-    pin:
-      number: GPIO1
-      inverted: true
-    name: "${friendly_name} Button 3"
-    on_press:
-      then:
         - display.page.show_next: m5_display
 
   # Inverter Status (from Modbus)
@@ -524,15 +497,33 @@ display:
           it.strftime(160, 238, id(font_tiny), id(color_gray), TextAlign::CENTER,
                       "%Y-%m-%d %H:%M:%S", id(esptime).now());
 
-# Touchscreen (FT6336U) - Now with page switching
+# Touchscreen (FT6336U) - With touch zones for navigation
 touchscreen:
   - platform: ft63x6
     id: my_touchscreen
     on_touch:
       - lambda: |-
           ESP_LOGI("touch", "Touch at (%d, %d)", touch.x, touch.y);
-          // Switch pages on touch
-          id(m5_display).show_next_page();
+
+          // Define touch zones for bottom "buttons" (y > 200 is bottom area)
+          if (touch.y > 200) {
+            // Bottom area divided into three zones
+            if (touch.x < 107) {
+              // Left zone - Previous page
+              ESP_LOGI("touch", "Left button pressed - Previous page");
+              id(m5_display).show_previous_page();
+            } else if (touch.x > 213) {
+              // Right zone - Next page
+              ESP_LOGI("touch", "Right button pressed - Next page");
+              id(m5_display).show_next_page();
+            } else {
+              // Center zone - could add custom action here
+              ESP_LOGI("touch", "Center button pressed");
+            }
+          } else {
+            // Main display area - Next page
+            id(m5_display).show_next_page();
+          }
 
 # Fonts for Display
 font:
