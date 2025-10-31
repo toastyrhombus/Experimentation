@@ -1,0 +1,192 @@
+substitutions:
+  device_name: m5stack-tough
+  friendly_name: M5Stack Tough
+
+esphome:
+  name: ${device_name}
+  platformio_options:
+    board_build.partitions: huge_app.csv
+
+esp32:
+  board: m5stack-core-esp32
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+# I2C Bus Configuration
+i2c:
+  - id: bus_a
+    sda: GPIO21
+    scl: GPIO22
+    scan: true
+
+# SPI Bus for Display
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+  miso_pin: GPIO38
+
+# Power Management (IP5306)
+binary_sensor:
+  # Power Button
+  - platform: gpio
+    pin:
+      number: GPIO39
+      inverted: true
+    name: "${friendly_name} Power Button"
+    on_press:
+      then:
+        - logger.log: "Power button pressed"
+
+  # Touch Button 1 (Bottom Left)
+  - platform: gpio
+    pin:
+      number: GPIO38
+      inverted: true
+    name: "${friendly_name} Button 1"
+
+  # Touch Button 2 (Bottom Center)
+  - platform: gpio
+    pin:
+      number: GPIO37
+      inverted: true
+    name: "${friendly_name} Button 2"
+
+  # Touch Button 3 (Bottom Right)
+  - platform: gpio
+    pin:
+      number: GPIO1
+      inverted: true
+    name: "${friendly_name} Button 3"
+
+# MPU6886 IMU Sensor
+sensor:
+  - platform: mpu6050
+    address: 0x68
+    accel_x:
+      name: "${friendly_name} Accel X"
+    accel_y:
+      name: "${friendly_name} Accel Y"
+    accel_z:
+      name: "${friendly_name} Accel Z"
+    gyro_x:
+      name: "${friendly_name} Gyro X"
+    gyro_y:
+      name: "${friendly_name} Gyro Y"
+    gyro_z:
+      name: "${friendly_name} Gyro Z"
+    temperature:
+      name: "${friendly_name} IMU Temperature"
+    update_interval: 60s
+
+  # WiFi Signal Sensor
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 60s
+
+  # Uptime Sensor
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+    update_interval: 60s
+
+# Display Configuration (ILI9341)
+display:
+  - platform: ili9xxx
+    model: M5STACK
+    cs_pin: GPIO5
+    dc_pin: GPIO15
+    reset_pin: GPIO4
+    rotation: 0
+    lambda: |-
+      // Draw a simple welcome screen
+      it.fill(COLOR_BLACK);
+      it.print(160, 20, id(font_large), COLOR_WHITE, TextAlign::TOP_CENTER, "M5Stack Tough");
+      it.print(160, 60, id(font_medium), COLOR_CYAN, TextAlign::TOP_CENTER, "ESPHome");
+      it.printf(160, 100, id(font_small), COLOR_GREEN, TextAlign::TOP_CENTER, "WiFi: %s", id(wifi_ssid).c_str());
+      it.printf(160, 130, id(font_small), COLOR_YELLOW, TextAlign::TOP_CENTER, "IP: %s", WiFi.localIP().toString().c_str());
+      it.strftime(160, 200, id(font_small), COLOR_WHITE, TextAlign::TOP_CENTER, "%Y-%m-%d %H:%M:%S", id(esptime).now());
+
+# Touchscreen (FT6336U)
+touchscreen:
+  - platform: ft63x6
+    id: my_touchscreen
+    on_touch:
+      - logger.log:
+          format: "Touch at (%d, %d)"
+          args: ["touch.x", "touch.y"]
+
+# Fonts for Display
+font:
+  - file: "gfonts://Roboto"
+    id: font_large
+    size: 32
+  - file: "gfonts://Roboto"
+    id: font_medium
+    size: 24
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 16
+
+# Time Component
+time:
+  - platform: homeassistant
+    id: esptime
+
+# Text Sensors
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} IP Address"
+      id: wifi_ip
+    ssid:
+      name: "${friendly_name} SSID"
+      id: wifi_ssid
+
+# Speaker Output (NS4168)
+output:
+  - platform: ledc
+    pin: GPIO25
+    id: speaker_output
+
+# RTTTL Buzzer for Speaker
+rtttl:
+  output: speaker_output
+  on_finished_playback:
+    - logger.log: "Song finished!"
+
+# LED
+light:
+  - platform: monochromatic
+    output: gpio_led
+    name: "${friendly_name} LED"
+
+output:
+  - platform: ledc
+    pin: GPIO19
+    id: gpio_led
+
+# Switch for enabling/disabling features
+switch:
+  - platform: restart
+    name: "${friendly_name} Restart"

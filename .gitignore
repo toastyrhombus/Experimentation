@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+
+# ESPHome
+secrets.yaml
+.esphome/
+*.bin
+*.elf
+*.map
