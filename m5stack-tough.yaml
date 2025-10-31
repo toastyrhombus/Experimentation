@@ -18,7 +18,8 @@ esphome:
       - display.page.show: main_page
 
 esp32:
-  board: m5stack-core-esp32
+  board: m5stack-core2
+  flash_size: 16MB
   framework:
     type: arduino
 
@@ -65,18 +66,6 @@ i2c:
 
 # AXP192 Power Management Chip (0x34) - CRITICAL for M5Stack Tough
 # Controls display backlight, speaker power, and other peripherals
-axp192:
-  address: 0x34
-  i2c_id: bus_a
-  # Enable these power rails
-  on_boot:
-    - script.execute: axp_init
-
-script:
-  - id: axp_init
-    mode: single
-    then:
-      - logger.log: "Initializing AXP192 power management"
 
 # SPI Bus for Display
 spi:
@@ -341,7 +330,6 @@ display:
     id: m5_display
     cs_pin: GPIO5
     dc_pin: GPIO15
-    reset_pin: GPIO33  # FIXED: Was GPIO4, must be GPIO33 for M5Stack Tough
     invert_colors: false
     rotation: 0
     update_interval: 1s
@@ -511,8 +499,10 @@ display:
 
 # Touchscreen (FT6336U) - With touch zones for navigation
 touchscreen:
-  - platform: ft63x6
+  - platform: chsc6x
+    address: 0x2E
     id: my_touchscreen
+    interrupt_pin: GPIO39
     i2c_id: bus_a
     # Using polling mode (no interrupt pin) to avoid conflicts
     on_touch:
