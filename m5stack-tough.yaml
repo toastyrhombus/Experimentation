@@ -6,8 +6,6 @@ substitutions:
 
 esphome:
   name: ${device_name}
-  platformio_options:
-    board_build.partitions: huge_app.csv
 
   # Boot sequence with splash screen
   on_boot:
@@ -35,7 +33,8 @@ api:
     key: !secret api_encryption_key
 
 ota:
-  password: !secret ota_password
+  - platform: esphome
+    password: !secret ota_password
 
 wifi:
   ssid: !secret wifi_ssid
@@ -111,16 +110,10 @@ modbus_controller:
 
 # Binary Sensors
 binary_sensor:
-  # Power Button (physical button on the side)
-  - platform: gpio
-    pin:
-      number: GPIO39
-      inverted: true
-    name: "${friendly_name} Power Button"
-    on_press:
-      then:
-        - logger.log: "Power button pressed"
-        - display.page.show_next: m5_display
+  # Power Button is wired to AXP192 pin 23 (not GPIO39) and cannot be monitored directly
+  # as a GPIO binary sensor. It is managed by the AXP192 power management chip.
+  # If you need to detect power button presses, you must use the AXP192 component's
+  # interrupt functionality (typically connected to GPIO35 on other M5Stack devices).
 
   # Inverter Status (from Modbus)
   - platform: modbus_controller
@@ -349,6 +342,7 @@ display:
     cs_pin: GPIO5
     dc_pin: GPIO15
     reset_pin: GPIO33  # FIXED: Was GPIO4, must be GPIO33 for M5Stack Tough
+    invert_colors: false
     rotation: 0
     update_interval: 1s
     pages:

@@ -7,14 +7,19 @@ This repository includes a comprehensive ESPHome configuration for the M5Stack T
 
 ### Recent Critical Fixes (Latest Update)
 
-**Display and I2C Issues Resolved:**
+**Configuration Corrections:**
+- ✅ **Removed invalid huge_app.csv**: This partition file doesn't exist and caused build errors
+- ✅ **Fixed OTA configuration**: Added required `platform: esphome` key
+- ✅ **Added invert_colors to display**: Required option for ili9xxx display component
+- ✅ **Fixed power button**: Removed GPIO39 configuration - power button is managed by AXP192 pin 23
+- ✅ **Verified all pin assignments**: Confirmed against M5Stack Tough schematic
+
+**Previous Fixes (Display and I2C):**
 - ✅ **Fixed display reset pin**: Changed from GPIO4 to GPIO33 (was causing display FAILED error)
 - ✅ **Added AXP192 power management**: Now properly controls display backlight and power rails
 - ✅ **Fixed I2C NACK errors**: Disabled MPU6886 IMU sensor (not present on all units)
 - ✅ **Improved touchscreen config**: Added explicit I2C bus assignment and polling mode
 - ✅ **Optimized I2C bus**: Set to 400kHz for better performance
-
-These fixes resolve the "Display FAILED" error and continuous I2C communication errors.
 
 ### Features
 
@@ -88,8 +93,8 @@ The configuration includes support for:
   - RX: GPIO13
 
 - **Buttons**:
-  - Power Button: GPIO39 (physical button - cycles pages)
-  - Bottom Touch Zones: Handled by FT6336U touchscreen (not GPIO)
+  - Power Button: Managed by AXP192 pin 23 (NOT accessible as GPIO)
+  - Bottom Touch Zones: Handled by FT6336U touchscreen controller via I2C
 
 - **LED**: GPIO19
 - **Speaker**: GPIO25
@@ -134,9 +139,8 @@ The M5Stack Tough display cycles through three pages:
 - **Touch bottom-center zone** (x 107-213, y > 200): Reserved for future use
 - **Touch bottom-right zone** (x > 213, y > 200): Next page
 - **Touch main display area** (y < 200): Next page
-- **Press physical Power Button** (side of device): Next page
 
-Note: The M5Stack Tough's bottom "buttons" are capacitive touch zones on the screen, not physical buttons.
+Note: The M5Stack Tough's bottom "buttons" are capacitive touch zones on the screen, not physical buttons. The physical power button on the side is managed by the AXP192 power management chip and is not directly accessible as a GPIO pin.
 
 ### Monitored Sensors
 
