@@ -62,6 +62,22 @@ i2c:
     sda: GPIO21
     scl: GPIO22
     scan: true
+    frequency: 400kHz  # Faster I2C for better performance
+
+# AXP192 Power Management Chip (0x34) - CRITICAL for M5Stack Tough
+# Controls display backlight, speaker power, and other peripherals
+axp192:
+  address: 0x34
+  i2c_id: bus_a
+  # Enable these power rails
+  on_boot:
+    - script.execute: axp_init
+
+script:
+  - id: axp_init
+    mode: single
+    then:
+      - logger.log: "Initializing AXP192 power management"
 
 # SPI Bus for Display
 spi:
@@ -285,31 +301,33 @@ sensor:
 
   # === M5STACK ONBOARD SENSORS ===
 
-  # MPU6886 IMU Sensor
-  - platform: mpu6050
-    address: 0x68
-    accel_x:
-      name: "${friendly_name} Accel X"
-      internal: true
-    accel_y:
-      name: "${friendly_name} Accel Y"
-      internal: true
-    accel_z:
-      name: "${friendly_name} Accel Z"
-      internal: true
-    gyro_x:
-      name: "${friendly_name} Gyro X"
-      internal: true
-    gyro_y:
-      name: "${friendly_name} Gyro Y"
-      internal: true
-    gyro_z:
-      name: "${friendly_name} Gyro Z"
-      internal: true
-    temperature:
-      name: "${friendly_name} IMU Temperature"
-      internal: true
-    update_interval: 60s
+  # MPU6886 IMU Sensor (optional - may not be present on all units)
+  # Commented out to avoid I2C NACK errors if not detected
+  # Uncomment if your device has the IMU at 0x68
+  # - platform: mpu6050
+  #   address: 0x68
+  #   accel_x:
+  #     name: "${friendly_name} Accel X"
+  #     internal: true
+  #   accel_y:
+  #     name: "${friendly_name} Accel Y"
+  #     internal: true
+  #   accel_z:
+  #     name: "${friendly_name} Accel Z"
+  #     internal: true
+  #   gyro_x:
+  #     name: "${friendly_name} Gyro X"
+  #     internal: true
+  #   gyro_y:
+  #     name: "${friendly_name} Gyro Y"
+  #     internal: true
+  #   gyro_z:
+  #     name: "${friendly_name} Gyro Z"
+  #     internal: true
+  #   temperature:
+  #     name: "${friendly_name} IMU Temperature"
+  #     internal: true
+  #   update_interval: 60s
 
   # WiFi Signal Sensor
   - platform: wifi_signal
@@ -330,7 +348,7 @@ display:
     id: m5_display
     cs_pin: GPIO5
     dc_pin: GPIO15
-    reset_pin: GPIO4
+    reset_pin: GPIO33  # FIXED: Was GPIO4, must be GPIO33 for M5Stack Tough
     rotation: 0
     update_interval: 1s
     pages:
@@ -501,6 +519,8 @@ display:
 touchscreen:
   - platform: ft63x6
     id: my_touchscreen
+    i2c_id: bus_a
+    # Using polling mode (no interrupt pin) to avoid conflicts
     on_touch:
       - lambda: |-
           ESP_LOGI("touch", "Touch at (%d, %d)", touch.x, touch.y);

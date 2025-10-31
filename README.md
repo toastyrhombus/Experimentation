@@ -5,6 +5,17 @@ Public repository to store and sync experiments with data structures and other l
 
 This repository includes a comprehensive ESPHome configuration for the M5Stack Tough device, configured as a **Zeversolar TLC5000 Solar Inverter Monitor** with real-time local display.
 
+### Recent Critical Fixes (Latest Update)
+
+**Display and I2C Issues Resolved:**
+- ✅ **Fixed display reset pin**: Changed from GPIO4 to GPIO33 (was causing display FAILED error)
+- ✅ **Added AXP192 power management**: Now properly controls display backlight and power rails
+- ✅ **Fixed I2C NACK errors**: Disabled MPU6886 IMU sensor (not present on all units)
+- ✅ **Improved touchscreen config**: Added explicit I2C bus assignment and polling mode
+- ✅ **Optimized I2C bus**: Set to 400kHz for better performance
+
+These fixes resolve the "Display FAILED" error and continuous I2C communication errors.
+
 ### Features
 
 The configuration includes support for:
@@ -58,15 +69,19 @@ The configuration includes support for:
 
 ### Pin Mappings
 
-- **Display**:
+- **Display** (ILI9342):
   - CS: GPIO5
   - DC: GPIO15
-  - Reset: GPIO4
-  - Backlight: Built-in
+  - Reset: GPIO33 (CRITICAL: Not GPIO4!)
+  - Backlight: Controlled by AXP192 power management chip
 
-- **I2C** (Sensors):
+- **I2C Bus** (400kHz):
   - SDA: GPIO21
   - SCL: GPIO22
+  - **Devices on bus:**
+    - 0x34: AXP192 power management (required for display backlight)
+    - 0x38: FT6336U touchscreen controller
+    - 0x51: Optional EEPROM (if present)
 
 - **RS485/Modbus** (Zeversolar):
   - TX: GPIO14
@@ -155,6 +170,18 @@ The Zeversolar TLC5000 uses Modbus RTU protocol over RS485:
 Register mappings are pre-configured for the TLC5000 model. If you have a different Zeversolar model, you may need to adjust the register addresses.
 
 ### Troubleshooting
+
+**Display is completely black or shows FAILED in logs:**
+- **Critical**: Ensure GPIO33 is used for display reset (not GPIO4)
+- **Critical**: AXP192 power management must be configured for display backlight
+- Check SPI connections (CLK=GPIO18, MOSI=GPIO23, CS=GPIO5, DC=GPIO15)
+- Verify the display model is set to M5STACK or ILI9342
+
+**I2C NACK errors in logs:**
+- Run I2C scan to see which devices are actually present
+- Disable/comment out sensors for devices not found on the bus
+- The MPU6886 IMU (0x68) may not be present on all M5Stack Tough units
+- Ensure I2C frequency is set correctly (400kHz recommended)
 
 **Display shows "Offline" status:**
 - Check RS485 wiring connections
